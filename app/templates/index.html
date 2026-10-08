@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI SQL Assistant</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><main><p class="eyebrow">SCHEMA → QUESTION → SQL</p><h1>AI SQL Assistant</h1><p>Draft and understand MySQL queries using your table definitions.</p>
+<aside>Local portfolio demo. Use synthetic schemas only. SQL is generated for review and is never executed or saved. Parsing checks names and syntax; it does not prove the query answers your question.</aside>
+{% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
+{% set values = values or {} %}
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="mode">What would you like to do?</label><select id="mode" name="mode"><option value="generate" {% if values.get('mode') == 'generate' %}selected{% endif %}>Generate SQL from a question</option><option value="explain" {% if values.get('mode') == 'explain' %}selected{% endif %}>Explain existing SQL</option></select>
+<label for="schema">MySQL schema — CREATE TABLE statements</label><textarea id="schema" name="schema" rows="7" maxlength="30000" required placeholder="CREATE TABLE books (id INT PRIMARY KEY, title VARCHAR(200), available_copies INT);">{{ values.get('schema', '') }}</textarea>
+<details><summary>Copy a synthetic example</summary><pre>CREATE TABLE books (id INT PRIMARY KEY, title VARCHAR(200), available_copies INT);</pre><p>Question: Show titles of books with at least one available copy, sorted alphabetically.</p><pre>SELECT title FROM books WHERE available_copies &gt; 0 ORDER BY title;</pre></details>
+<label for="question">Question — for Generate mode</label><textarea id="question" name="question" rows="3" maxlength="4000">{{ values.get('question', '') }}</textarea>
+<label for="query">Existing SELECT query — for Explain mode</label><textarea id="query" name="query" rows="4" maxlength="20000">{{ values.get('query', '') }}</textarea>
+<label class="check"><input type="checkbox" name="consent" value="yes" required> These inputs are synthetic and contain no confidential information. Schema and question/query will be sent to Gemini.</label>
+<button>Analyze</button></form>
+{% if result %}<section aria-live="polite"><h2>Your SQL draft</h2>{% if result.sql %}<pre>{{ result.sql }}</pre>{% endif %}<h3>Explanation</h3><ol>{% for item in result.explanation %}<li>{{ item }}</li>{% endfor %}</ol>{% if result.assumptions %}<h3>Assumptions</h3><ul>{% for item in result.assumptions %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}{% if result.missing_information %}<h3>Clarification needed</h3><ul>{% for item in result.missing_information %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}</section>{% endif %}
+</main></body></html>
